@@ -10,7 +10,7 @@ from station
 
 --ex3
 select
-ceiling(avg(salary) - avg(replace(salary,'0',''))) as different
+ceiling(avg(salary) - avg(replace(salary,'0',''))) as different ---cai nay t search gg thay dung ham replace la de hieu nhat, ko biet cach nào thi se clean hon
 from employees
 
 --ex4
