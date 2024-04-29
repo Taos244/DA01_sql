@@ -63,5 +63,64 @@ Inner join payment as t5 on t4.customer_id=t5.customer_id
 Group by t2.city || ' ,' || t1.country
 order by sum(amount) desc
 
---EXCERCISE
---ex1: 
+--EXERCISE
+--ex1:
+select t2.continent, floor(avg(t1.population))
+from city as t1
+inner join country as t2 on t1.countrycode=t2.code
+group by t2.continent
+
+--ex2:
+SELECT
+round(sum(CASE
+when t2.signup_action='Confirmed' then 1 else 0
+end)::decimal/count(signup_action),2) as confirm_rate
+from emails as t1
+inner join texts as t2 on t1.email_id=t2.email_id
+
+--ex3:
+SELECT
+t2.age_bucket,
+round(sum(CASE
+when activity_type='open' then time_spent
+else 0
+end)*100.0/sum(time_spent),2) as open_perc,
+round(sum(CASE
+when activity_type='send' then time_spent
+else 0
+end)*100.0/sum(time_spent),2) as send_perc
+from activities as t1
+inner join age_breakdown as t2 on t1.user_id=t2.user_id
+where activity_type!='chat'
+group by t2.age_bucket
+
+--ex4:
+SELECT t1.customer_id
+FROM customer_contracts as t1
+inner join products as t2 on t1.product_id=t2.product_id
+group by t1.customer_id
+having count(DISTINCT product_category)>=3
+
+--ex5:
+select mng.employee_id, mng.name,
+count(emp.employee_id) as reports_count, --TAI SAO count employee id mà kp count reports to
+round(avg(emp.age)) as average_age
+from employees as emp
+join employees as mng on emp.reports_to=mng.employee_id
+group by employee_id
+
+--ex6:
+select t1.product_name,
+sum(t2.unit) as unit
+from products as t1
+inner join orders as t2 on t1.product_id=t2.product_id
+where t2.order_date like '2020-02%'
+group by t1.product_name
+having sum(t2.unit)>=100
+
+--ex7:
+SELECT t1.page_id
+FROM pages as t1
+full join page_likes as t2 on t1.page_id=t2.page_id
+where t2.liked_date is null
+order by page_id 
