@@ -63,3 +63,16 @@ select  user_id, tweet_date,
   ELSE ROUND((nd_day + rd_day + tweet_count) / 3.0, 2)
   END AS rolling_avg_3d
 from day
+
+--ex6:
+with time as(SELECT transaction_id, merchant_id, credit_card_id, transaction_timestamp,amount,
+lag(transaction_timestamp) over(partition by merchant_id,credit_card_id, amount order by transaction_timestamp) as prv_trans,
+extract(minute from (transaction_timestamp - lag(transaction_timestamp) over(partition by merchant_id,credit_card_id, amount order by transaction_timestamp))) as time_btw
+
+FROM transactions)
+
+select count(time_btw)
+from time
+where time_btw < 10
+
+--ex7:
