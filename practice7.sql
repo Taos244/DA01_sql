@@ -76,3 +76,15 @@ from time
 where time_btw < 10
 
 --ex7:
+with cte as(SELECT category, product,
+sum(spend) as spend,
+row_number() over(partition by category order by sum(spend) desc) as ranking
+FROM product_spend
+where extract(year from transaction_date)=2022
+group by product,category)
+
+select category,product,spend
+from cte
+where ranking in(1,2)
+
+--ex8:
