@@ -1,10 +1,3 @@
-Select * from bigquery-public-data.thelook_ecommerce.distribution_centers;
-select * from bigquery-public-data.thelook_ecommerce.events
-select * from bigquery-public-data.thelook_ecommerce.inventory_items
-select * from bigquery-public-data.thelook_ecommerce.order_items
-select * from bigquery-public-data.thelook_ecommerce.orders
-select * from bigquery-public-data.thelook_ecommerce.products
-select * from bigquery-public-data.thelook_ecommerce.users
 --SL đơn hàng số lượng Kh mỗi tháng
 select
 format_date('%Y-%m',created_at) as month_year,
@@ -97,6 +90,14 @@ where rank_per_month <=5
 ---Thống kê tổng doanh thu theo ngày của từng danh mục sản phẩm (category) trong 3 tháng qua ( giả sử ngày hiện tại là 15/4/2022)
 ---Output: dates (yyyy-mm-dd), product_categories, revenue
 
+select
+extract(date from a.created_at) as dates,
+b.category as product_category,
+SUM(a.sale_price) as revenue
+from bigquery-public-data.thelook_ecommerce.order_items as a
+join bigquery-public-data.thelook_ecommerce.products as b on a.product_id=b.id
+where a.status='Complete'
+and extract(date from a.created_at) between '2022-01-15' and '2022-04-16'
+Group by 1,2
+order by 1,2
 
-select * from bigquery-public-data.thelook_ecommerce.order_items
-select * from bigquery-public-data.thelook_ecommerce.products
