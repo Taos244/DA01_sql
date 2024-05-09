@@ -111,7 +111,6 @@ order by 1,2
 --III. Metric để dựng dashboard:
 ---Month, Year, Product_category, TPV, TPO, Revenue_growth, Order_growth, Total_cost, Total_profit Profit_to_cost_ratio
 ---- vw_ecommerce_analyst
-
 with info as(
 select
 format_date('%Y-%m',a.created_at) as Month,
@@ -119,16 +118,57 @@ extract(Year from a.created_at) as Year,
 b.category as product_category,
 Sum(a.sale_price) as TPV,
 Count(distinct a.order_id) as TPO,
---revenue_growth, order_growth,
 sum(b.cost) as total_cost,
 sum(a.sale_price)-sum(b.cost) as total_profit
---profit_to_cost_ratio
 from bigquery-public-data.thelook_ecommerce.order_items as a
 join bigquery-public-data.thelook_ecommerce.products as b on a.product_id=b.id
 group by 1,2,3
 order by 1,3)
 
 Select *,
-100*(Lead(tpv) over(partition by) - tpv)/tpv ||'%' as revenue_growth
+round(100*(Lead(tpv) over(partition by product_category order by month,year) - tpv)/tpv,2) ||'%' as revenue_growth,
+round(100*(Lead(tpo) over(partition by product_category order by month,year) - tpo)/tpo,2) ||'%' as order_growth,
+round(total_profit/total_cost,2) as profit_to_cost_ratio
 from info
+order by month,year, product_category
+
+--retention cohort analysis
+with cohort_index as(
+Select *,
+min(created_at) over(partition by user_id) as first_purchase_date,
+(extract(year from created_at)-extract(year from min(created_at) over(partition by user_id)))*12 +(extract(month from created_at)-extract(month from min(created_at) over(partition by user_id)))+1 as index,
+from bigquery-public-data.thelook_ecommerce.order_items)
+
+,xxx as(
+Select
+format_date('%Y-%m',first_purchase_date) as cohort_date,
+index,
+count(distinct user_id) as user_count,
+Sum(sale_price) as revenue
+from cohort_index
+group by 1,2
+)
+--customer cohort
+,customer_cohort as(
+select
+cohort_date,
+sum(case when index=1 then user_count else 0 end) as index1,
+sum(case when index=2 then user_count else 0 end) as index2,
+sum(case when index=3 then user_count else 0 end) as index3,
+sum(case when index=4 then user_count else 0 end) as index4
+from xxx
+group by cohort_date
+order by 1)
+
+--retention cohort
+select
+cohort_date,
+round(100*index1/index1,2) ||'%' as index_1,
+round(100*index2/index1,2) ||'%' as index_2,
+round(100*index3/index1,2) ||'%' as index_3,
+round(100*index4/index1,2) ||'%' as index_4
+from customer_cohort
+
+
+Select * from bigquery-public-data.thelook_ecommerce.order_items
 
