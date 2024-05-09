@@ -1,3 +1,10 @@
+Select * from bigquery-public-data.thelook_ecommerce.distribution_centers;
+select * from bigquery-public-data.thelook_ecommerce.events
+select * from bigquery-public-data.thelook_ecommerce.inventory_items
+select * from bigquery-public-data.thelook_ecommerce.order_items
+select * from bigquery-public-data.thelook_ecommerce.orders
+select * from bigquery-public-data.thelook_ecommerce.products
+select * from bigquery-public-data.thelook_ecommerce.users
 --SL đơn hàng số lượng Kh mỗi tháng
 select
 format_date('%Y-%m',created_at) as month_year,
@@ -100,4 +107,28 @@ where a.status='Complete'
 and extract(date from a.created_at) between '2022-01-15' and '2022-04-16'
 Group by 1,2
 order by 1,2
+
+--III. Metric để dựng dashboard:
+---Month, Year, Product_category, TPV, TPO, Revenue_growth, Order_growth, Total_cost, Total_profit Profit_to_cost_ratio
+---- vw_ecommerce_analyst
+
+with info as(
+select
+format_date('%Y-%m',a.created_at) as Month,
+extract(Year from a.created_at) as Year,
+b.category as product_category,
+Sum(a.sale_price) as TPV,
+Count(distinct a.order_id) as TPO,
+--revenue_growth, order_growth,
+sum(b.cost) as total_cost,
+sum(a.sale_price)-sum(b.cost) as total_profit
+--profit_to_cost_ratio
+from bigquery-public-data.thelook_ecommerce.order_items as a
+join bigquery-public-data.thelook_ecommerce.products as b on a.product_id=b.id
+group by 1,2,3
+order by 1,3)
+
+Select *,
+100*(Lead(tpv) over(partition by) - tpv)/tpv ||'%' as revenue_growth
+from info
 
